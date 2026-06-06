@@ -399,9 +399,9 @@ jobs:
         # Bencher's shell_hyperfine adapter accepts, one per testbed. For
         # each, keep only the chosen target's result from each scenario
         # and rename `.command` to the scenario name, so Bencher names the
-        # benchmark after the scenario. Both tools run all four scenarios,
+        # benchmark after the scenario. Both tools run all five scenarios,
         # so the `pacquet` testbed gets `pacquet@HEAD` and the `pnpr`
-        # testbed gets `pnpr@HEAD`, each across the same four scenarios.
+        # testbed gets `pnpr@HEAD`, each across the same scenario set.
         shell: bash
         run: |
           # Build one bencher-results file: $1 = output path, $2 = the
