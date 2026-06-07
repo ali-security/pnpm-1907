@@ -1,6 +1,6 @@
 import { type Resolution, type GitResolution, type DirectoryResolution } from '@pnpm/resolver-base'
 import { type Cafs } from '@pnpm/cafs-types'
-import { type DependencyManifest } from '@pnpm/types'
+import { type AllowBuild, type DependencyManifest } from '@pnpm/types'
 
 export interface PkgNameVersion {
   name?: string
@@ -8,6 +8,7 @@ export interface PkgNameVersion {
 }
 
 export interface FetchOptions {
+  allowBuild?: AllowBuild
   filesIndexFile: string
   lockfileDir: string
   onStart?: (totalSize: number | null, attempt: number) => void
@@ -27,9 +28,11 @@ export interface FetchResult {
   manifest?: DependencyManifest
   filesIndex: Record<string, string>
   requiresBuild: boolean
+  integrity?: string
 }
 
 export interface GitFetcherOptions {
+  allowBuild?: AllowBuild
   readManifest?: boolean
   filesIndexFile: string
   pkg?: PkgNameVersion

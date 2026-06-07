@@ -5,6 +5,7 @@ import { type PatchGroupRecord } from '@pnpm/patching.config'
 import { type PreferredVersions, type Resolution, type WorkspacePackages } from '@pnpm/resolver-base'
 import { type StoreController } from '@pnpm/store-controller-types'
 import {
+  type AllowBuild,
   type SupportedArchitectures,
   type AllowedDeprecatedVersions,
   type PinnedVersion,
@@ -97,6 +98,7 @@ export interface ImporterToResolveGeneric<WantedDepExtraProps> extends Importer<
 }
 
 export interface ResolveDependenciesOptions {
+  allowBuild?: AllowBuild
   autoInstallPeers?: boolean
   autoInstallPeersFromHighestMatch?: boolean
   allowedDeprecatedVersions: AllowedDeprecatedVersions
@@ -153,6 +155,7 @@ export async function resolveDependencyTree<T> (
   const wantedToBeSkippedPackageIds = new Set<PkgResolutionId>()
   const autoInstallPeers = opts.autoInstallPeers === true
   const ctx: ResolutionContext = {
+    allowBuild: opts.allowBuild,
     autoInstallPeers,
     autoInstallPeersFromHighestMatch: opts.autoInstallPeersFromHighestMatch === true,
     allowedDeprecatedVersions: opts.allowedDeprecatedVersions,

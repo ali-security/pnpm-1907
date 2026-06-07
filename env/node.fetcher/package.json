@@ -40,6 +40,7 @@
     "@pnpm/tarball-fetcher": "workspace:*",
     "adm-zip": "catalog:",
     "detect-libc": "catalog:",
+    "is-subdir": "catalog:",
     "rename-overwrite": "catalog:",
     "tempy": "catalog:"
   },

@@ -68,6 +68,7 @@ interface AddFilesResult {
   filesIndex: Record<string, string>
   manifest: DependencyManifest
   requiresBuild: boolean
+  integrity?: string
 }
 
 type AddFilesFromDirOptions = Pick<AddDirToStoreMessage, 'storeDir' | 'dir' | 'filesIndexFile' | 'sideEffectsCacheKey' | 'readManifest' | 'pkg' | 'files'>
@@ -142,7 +143,7 @@ export async function addFilesFromTarball (opts: AddFilesFromTarballOptions): Pr
     workerPool = createTarballWorkerPool()
   }
   const localWorker = await workerPool.checkoutWorkerAsync(true)
-  return new Promise<{ filesIndex: Record<string, string>, manifest: DependencyManifest, requiresBuild: boolean }>((resolve, reject) => {
+  return new Promise<AddFilesResult>((resolve, reject) => {
     localWorker.once('message', ({ status, error, value }) => {
       workerPool!.checkinWorker(localWorker)
       if (status === 'error') {

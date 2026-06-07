@@ -9,6 +9,7 @@ import { pickFetcher } from '@pnpm/pick-fetcher'
 import { createCafsStore } from '@pnpm/create-cafs-store'
 import { createTarballFetcher } from '@pnpm/tarball-fetcher'
 import AdmZip from 'adm-zip'
+import isSubdir from 'is-subdir'
 import renameOverwrite from 'rename-overwrite'
 import tempy from 'tempy'
 import { isNonGlibcLinux } from 'detect-libc'
@@ -56,6 +57,15 @@ export async function fetchNode (fetch: FetchFromRegistry, version: string, targ
   })
 }
 
+/**
+ * Downloads and extracts a ZIP file to a target directory.
+ *
+ * @param fetchFromRegistry - Function to fetch the ZIP file
+ * @param zipUrl - URL of the ZIP file to download
+ * @param targetDir - Directory where contents should be extracted
+ * @param pkgName - Base name of the package (without extension)
+ * @throws {PnpmError} When extraction fails or path traversal is detected
+ */
 async function downloadAndUnpackZip (
   fetchFromRegistry: FetchFromRegistry,
   zipUrl: string,
@@ -70,7 +80,39 @@ async function downloadAndUnpackZip (
   })
   const zip = new AdmZip(tmp)
   const nodeDir = path.dirname(targetDir)
-  zip.extractAllTo(nodeDir, true)
+
+  // Validate pkgName doesn't escape the target directory
+  if (pkgName !== '') {
+    validatePathSecurity(nodeDir, pkgName)
+  }
+
+  // Extract each entry with path validation to prevent path traversal attacks
+  for (const entry of zip.getEntries()) {
+    const entryPath = entry.entryName
+    validatePathSecurity(nodeDir, entryPath)
+    zip.extractEntryTo(entry, nodeDir, true, true)
+  }
+
   await renameOverwrite(path.join(nodeDir, pkgName), targetDir)
   await fs.promises.unlink(tmp)
+}
+
+/**
+ * Validates that a path does not escape the base directory via path traversal.
+ *
+ * @param basePath - The base directory that should contain the target
+ * @param targetPath - The relative path to validate
+ * @throws {PnpmError} When path traversal is detected
+ */
+function validatePathSecurity (basePath: string, targetPath: string): void {
+  // Explicitly reject absolute paths - they should never be allowed as prefixes or entry names
+  if (path.isAbsolute(targetPath)) {
+    throw new PnpmError('PATH_TRAVERSAL',
+      `Refusing to extract path "${targetPath}" - absolute paths are not allowed`)
+  }
+  const normalizedTarget = path.resolve(basePath, targetPath)
+  if (!isSubdir(basePath, normalizedTarget) && normalizedTarget !== basePath) {
+    throw new PnpmError('PATH_TRAVERSAL',
+      `Refusing to extract path "${targetPath}" outside of target directory`)
+  }
 }

@@ -35,6 +35,7 @@
     "@pnpm/store-controller-types": "workspace:*",
     "@zkochan/rimraf": "catalog:",
     "is-gzip": "catalog:",
+    "is-subdir": "catalog:",
     "p-limit": "catalog:",
     "rename-overwrite": "catalog:",
     "ssri": "catalog:",

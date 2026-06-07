@@ -269,6 +269,7 @@ async function resolveAndFetch (
 
   const pkg: PkgNameVersion = manifest != null ? pick(['name', 'version'], manifest) : {}
   const fetchResult = ctx.fetchPackageToStore({
+    allowBuild: options.allowBuild,
     fetchRawManifest: true,
     force: forceFetch,
     ignoreScripts: options.ignoreScripts,
@@ -285,7 +286,12 @@ async function resolveAndFetch (
   })
 
   if (!manifest) {
-    manifest = (await fetchResult.fetching()).bundledManifest
+    const fetchedResult = await fetchResult.fetching()
+    manifest = fetchedResult.bundledManifest
+    // Add integrity to resolution if it was computed during fetching (only for TarballResolution)
+    if (fetchedResult.integrity && !resolution.type && !(resolution as TarballResolution).integrity) {
+      (resolution as TarballResolution).integrity = fetchedResult.integrity
+    }
   }
   return {
     body: {
@@ -537,6 +543,7 @@ Actual package in the store with the given integrity: ${pkgFilesIndex.name}@${pk
         opts.pkg.id,
         opts.pkg.resolution,
         {
+          allowBuild: opts.allowBuild,
           filesIndexFile,
           lockfileDir: opts.lockfileDir,
           readManifest: opts.fetchRawManifest,
@@ -562,9 +569,10 @@ Actual package in the store with the given integrity: ${pkgFilesIndex.name}@${pk
         }
       ), { priority })
 
-      if (isLocalTarballDep && (opts.pkg.resolution as TarballResolution).integrity) {
+      const integrity = (opts.pkg.resolution as TarballResolution).integrity ?? fetchedPackage.integrity
+      if (isLocalTarballDep && integrity) {
         await fs.mkdir(target, { recursive: true })
-        await gfs.writeFile(path.join(target, TARBALL_INTEGRITY_FILENAME), (opts.pkg.resolution as TarballResolution).integrity!, 'utf8')
+        await gfs.writeFile(path.join(target, TARBALL_INTEGRITY_FILENAME), integrity, 'utf8')
       }
 
       fetching.resolve({
@@ -575,6 +583,7 @@ Actual package in the store with the given integrity: ${pkgFilesIndex.name}@${pk
           requiresBuild: fetchedPackage.requiresBuild,
         },
         bundledManifest: fetchedPackage.manifest == null ? fetchedPackage.manifest : normalizeBundledManifest(fetchedPackage.manifest),
+        integrity,
       })
     } catch (err: any) { // eslint-disable-line
       fetching.reject(err)
